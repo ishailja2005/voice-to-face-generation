@@ -1,5 +1,48 @@
 # Speech-to-Face Generation using PyTorch
 
+## Quick start
+
+Run all commands from the project folder:
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+```
+
+First train the face autoencoder. This creates the decoder checkpoint required by the speech-to-face model:
+
+```powershell
+python training\train_face_autoencoder.py --epochs 200
+```
+
+Then train the speech-to-face model:
+
+```powershell
+python training\train.py --epochs 200
+```
+
+Generate an image using one of the processed voice embeddings:
+
+```powershell
+python inference\generate.py
+```
+
+The image is saved to `outputs/generated_face.png`. You can choose a different `.npy` embedding with `--embedding path\to\file.npy`.
+
+### Optional: clearer face decoder training
+
+The raw VGGFace images vary in pose and lighting, so align them before using them as extra training data:
+
+```powershell
+python preprocessing\align_faces.py --max-faces-per-identity 50
+python training\train_face_autoencoder.py --epochs 50 --aligned-face-root data\aligned_faces
+python training\train.py --epochs 200
+python inference\generate.py
+```
+
+The project has only 55 paired voice samples. The face-autoencoder stage uses the processed, aligned face images by default; this keeps the output frontal and reduces blur. The voice-to-face stage uses the paired voice embeddings. Raw VGGFace images can be enabled with `--use-raw-faces`, but they have varied pose and lighting and are expected to blur output without a separate face-alignment step. The model can learn the available examples, but it cannot produce an exact or reliably identifiable face for new voices. The saved checkpoints are the best ones observed during training, and the learning rate is automatically reduced when loss stops improving.
+
 ## Project Overview
 
 This project aims to generate a human face from a speech embedding using Deep Learning. The system takes a preprocessed voice embedding as input and predicts the corresponding face image using a Generator Network implemented in PyTorch.
